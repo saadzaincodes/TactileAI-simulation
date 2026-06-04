@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent: #00d4ff;
+  --accent-warm: #ff6b35;
+  --danger: #ff3355;
+  --success: #00ff88;
+  --surface: rgba(15, 15, 25, 0.85);
+  --surface-light: rgba(25, 25, 45, 0.9);
+  --border: rgba(100, 120, 180, 0.15);
+  --text: #e0e4f0;
+  --text-dim: #7080a0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out forwards;
+}
+
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--border);
+}
+
+.glass-light {
+  background: var(--surface-light);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+.sensor-cell {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), 0 0 60px rgba(0, 212, 255, 0.1);
+}
+
+.glow-danger {
+  box-shadow: 0 0 20px rgba(255, 51, 85, 0.4), 0 0 60px rgba(255, 51, 85, 0.15);
+}
+
+.leva-c-kWgxhW { /* override leva panel styles */
+  --leva-sizes-controlWidth: 160px;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 120, 180, 0.3);
+  border-radius: 2px;
+}
