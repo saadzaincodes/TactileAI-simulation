@@ -1,11 +1,29 @@
 import { useMemo } from 'react'
-import { SimulationState, ArmState } from '../simulation/biotacModel'
+import { SimulationState } from '../simulation/biotacModel'
 
-function MiniChart({ data, color, height = 36 }: { data: number[]; color: string; height?: number }) {
-  const max = Math.max(...data, 0.01)
-  const pathD = useMemo(() => {
-    const w = 160
-    const step = w / (data.length - 1)
+/* ── Overlaid comparison chart (two lines) ── */
+function ComparisonChart({
+  dataA,
+  dataB,
+  colorA,
+  colorB,
+  labelA,
+  labelB,
+  height = 50,
+}: {
+  dataA: number[]
+  dataB: number[]
+  colorA: string
+  colorB: string
+  labelA: string
+  labelB: string
+  height?: number
+}) {
+  const max = Math.max(...dataA, ...dataB, 0.01)
+  const W = 220
+
+  const makePath = (data: number[]) => {
+    const step = W / (data.length - 1)
     return data
       .map((v, i) => {
         const x = i * step
@@ -13,135 +31,45 @@ function MiniChart({ data, color, height = 36 }: { data: number[]; color: string
         return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`
       })
       .join(' ')
-  }, [data, max, height])
+  }
+
+  const pathA = useMemo(() => makePath(dataA), [dataA, max, height])
+  const pathB = useMemo(() => makePath(dataB), [dataB, max, height])
+  const fillA = useMemo(() => `${pathA} L ${W} ${height} L 0 ${height} Z`, [pathA, height])
 
   return (
-    <svg viewBox={`0 0 160 ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={`g-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={`${pathD} L 160 ${height} L 0 ${height} Z`} fill={`url(#g-${color.replace('#', '')})`} />
-      <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
-function ScoreRing({ score, color, label }: { score: number; color: string; label: string }) {
-  const radius = 18
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference - (score / 100) * circumference
-
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <svg width="44" height="44" viewBox="0 0 44 44">
-        <circle cx="22" cy="22" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-        <circle
-          cx="22" cy="22" r={radius} fill="none"
-          stroke={color} strokeWidth="3" strokeLinecap="round"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          transform="rotate(-90 22 22)"
-          style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-        />
-        <text x="22" y="24" textAnchor="middle" fontSize="11" fontWeight="600" fontFamily="JetBrains Mono, monospace" fill={color}>
-          {Math.round(score)}
-        </text>
+    <div>
+      <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-[2px] rounded-full" style={{ background: colorA }} />
+          <span className="text-[8px] uppercase tracking-wider" style={{ color: colorA }}>{labelA}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-[2px] rounded-full opacity-60" style={{ background: colorB, borderStyle: 'dashed' }} />
+          <span className="text-[8px] uppercase tracking-wider" style={{ color: colorB, opacity: 0.6 }}>{labelB}</span>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`cg-${colorA.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={colorA} stopOpacity="0.15" />
+            <stop offset="100%" stopColor={colorA} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {/* AI fill */}
+        <path d={fillA} fill={`url(#cg-${colorA.replace('#', '')})`} />
+        {/* PID line (dashed) */}
+        <path d={pathB} fill="none" stroke={colorB} strokeWidth="1.2" strokeDasharray="4 3"
+          strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity={0.5} />
+        {/* AI line (solid) */}
+        <path d={pathA} fill="none" stroke={colorA} strokeWidth="1.8"
+          strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </svg>
-      <span className="text-[8px] uppercase tracking-wider text-white/30">{label}</span>
     </div>
   )
 }
 
-function ArmPanel({
-  arm,
-  label,
-  color,
-  side,
-}: {
-  arm: ArmState
-  label: string
-  color: string
-  side: 'left' | 'right'
-}) {
-  const gripPercent = (arm.gripForce * 100).toFixed(0)
-  const slipPercent = (arm.slipEvent.magnitude * 100).toFixed(1)
-
-  return (
-    <div
-      className={`absolute ${side === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 glass rounded-xl p-3 pointer-events-auto animate-slide-up`}
-      style={{ width: '195px', animationDelay: side === 'left' ? '0.3s' : '0.5s', opacity: 0 }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <div
-            className="w-1.5 h-1.5 rounded-full"
-            style={{
-              backgroundColor: arm.objectDropped ? '#ff3355' : arm.slipEvent.detected ? '#ffaa00' : '#00ff88',
-              boxShadow: `0 0 6px ${arm.objectDropped ? '#ff3355' : arm.slipEvent.detected ? '#ffaa00' : '#00ff88'}`,
-            }}
-          />
-          <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color }}>
-            {label}
-          </span>
-        </div>
-        {arm.objectDropped && (
-          <span className="text-[8px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/20">
-            Dropped
-          </span>
-        )}
-      </div>
-
-      {/* Metrics row */}
-      <div className="grid grid-cols-2 gap-2 mb-2">
-        <div>
-          <span className="text-[8px] uppercase tracking-wider text-white/25">Grip</span>
-          <div className="text-sm font-semibold font-mono tabular-nums" style={{ color }}>
-            {gripPercent}<span className="text-[9px] text-white/30">%</span>
-          </div>
-        </div>
-        <div>
-          <span className="text-[8px] uppercase tracking-wider text-white/25">Slip</span>
-          <div className="text-sm font-semibold font-mono tabular-nums" style={{ color: arm.slipEvent.detected ? '#ff3355' : '#e0e4f0' }}>
-            {slipPercent}<span className="text-[9px] text-white/30">%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Score + Drops */}
-      <div className="flex items-center justify-between mb-2">
-        <ScoreRing score={arm.gripScore} color={color} label="Score" />
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-lg font-bold font-mono tabular-nums" style={{ color: arm.dropCount > 0 ? '#ff3355' : '#e0e4f0' }}>
-            {arm.dropCount}
-          </span>
-          <span className="text-[8px] uppercase tracking-wider text-white/25">Drops</span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-lg font-bold font-mono tabular-nums text-white/60">
-            {arm.holdTime.toFixed(0)}<span className="text-[9px] text-white/25">s</span>
-          </span>
-          <span className="text-[8px] uppercase tracking-wider text-white/25">Held</span>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="space-y-1.5">
-        <div>
-          <span className="text-[8px] uppercase tracking-wider text-white/20">Grip Force</span>
-          <MiniChart data={arm.forceHistory} color={color} />
-        </div>
-        <div>
-          <span className="text-[8px] uppercase tracking-wider text-white/20">Slip</span>
-          <MiniChart data={arm.slipHistory} color={arm.slipEvent.detected ? '#ff3355' : '#ff6b35'} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
+/* ── Pressure grid ── */
 function PressureGrid({ electrodes, slipDetected }: { electrodes: number[][]; slipDetected: boolean }) {
   return (
     <div className="grid gap-[1.5px]" style={{ gridTemplateColumns: `repeat(${electrodes[0]?.length || 8}, 1fr)` }}>
@@ -150,53 +78,151 @@ function PressureGrid({ electrodes, slipDetected }: { electrodes: number[][]; sl
         const sat = 60 + val * 40
         const light = 10 + val * 50
         return (
-          <div
-            key={i}
-            className="sensor-cell rounded-[1px]"
-            style={{
-              aspectRatio: '1',
-              backgroundColor: `hsl(${hue}, ${sat}%, ${light}%)`,
-              boxShadow: val > 0.5 ? `0 0 ${val * 4}px hsla(${hue}, 90%, 50%, 0.4)` : 'none',
-            }}
-          />
+          <div key={i} className="sensor-cell rounded-[1px]" style={{
+            aspectRatio: '1',
+            backgroundColor: `hsl(${hue}, ${sat}%, ${light}%)`,
+            boxShadow: val > 0.5 ? `0 0 ${val * 4}px hsla(${hue}, 90%, 50%, 0.4)` : 'none',
+          }} />
         )
       })}
     </div>
   )
 }
 
+/* ── Score ring ── */
+function ScoreRing({ score, color, size = 40 }: { score: number; color: string; size?: number }) {
+  const r = size / 2 - 4
+  const circ = 2 * Math.PI * r
+  const offset = circ - (score / 100) * circ
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="2.5"
+        strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
+      <text x={size / 2} y={size / 2 + 1} textAnchor="middle" dominantBaseline="middle"
+        fontSize="10" fontWeight="600" fontFamily="JetBrains Mono, monospace" fill={color}>
+        {Math.round(score)}
+      </text>
+    </svg>
+  )
+}
+
+/* ── Main dashboard ── */
 export default function Dashboard({ state }: { state: SimulationState }) {
+  const active = state.activeMode === 'ai' ? state.ai : state.pid
+  const aiColor = '#00d4ff'
+  const pidColor = '#ff6b35'
+
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {/* Left panel — AI */}
-      <ArmPanel arm={state.ai} label="AI Controller" color="#00d4ff" side="left" />
 
-      {/* Right panel — PID */}
-      <ArmPanel arm={state.pid} label="Traditional PID" color="#ff6b35" side="right" />
+      {/* ── Right panel: comparison charts + metrics ── */}
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 glass rounded-xl p-3.5 pointer-events-auto animate-slide-up"
+        style={{ width: '260px', animationDelay: '0.3s', opacity: 0 }}>
 
-      {/* Top-right: time + pressure grids */}
-      <div
-        className="absolute top-3 right-3 glass rounded-lg px-3 py-2 animate-fade-in"
-        style={{ animationDelay: '0.3s', opacity: 0 }}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] text-white/30 uppercase tracking-wider">Time</span>
-          <span className="text-xs font-mono text-white/60 tabular-nums">{state.time.toFixed(1)}s</span>
-          <div
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: '#00ff88', boxShadow: '0 0 6px #00ff88', animation: 'pulse-glow 2s infinite' }}
+        {/* Header with mode indicator */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Controller Comparison</span>
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full" style={{
+              backgroundColor: active.objectDropped ? '#ff3355' : active.slipEvent.detected ? '#ffaa00' : '#00ff88',
+              boxShadow: `0 0 6px ${active.objectDropped ? '#ff3355' : active.slipEvent.detected ? '#ffaa00' : '#00ff88'}`,
+            }} />
+            <span className="text-[9px] text-white/30 uppercase">{state.activeMode === 'ai' ? 'AI' : 'PID'}</span>
+          </div>
+        </div>
+
+        {/* Score comparison */}
+        <div className="flex items-center justify-between mb-3 px-2">
+          <div className="flex flex-col items-center gap-0.5">
+            <ScoreRing score={state.ai.gripScore} color={aiColor} />
+            <span className="text-[7px] uppercase tracking-wider" style={{ color: aiColor }}>AI</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex gap-4">
+              <div className="text-center">
+                <div className="text-xs font-bold font-mono tabular-nums" style={{ color: state.ai.dropCount > state.pid.dropCount ? '#ff3355' : aiColor }}>
+                  {state.ai.dropCount}
+                </div>
+                <div className="text-[7px] text-white/20">drops</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs font-bold font-mono tabular-nums" style={{ color: state.pid.dropCount > state.ai.dropCount ? '#ff3355' : pidColor }}>
+                  {state.pid.dropCount}
+                </div>
+                <div className="text-[7px] text-white/20">drops</div>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-0.5">
+            <ScoreRing score={state.pid.gripScore} color={pidColor} />
+            <span className="text-[7px] uppercase tracking-wider" style={{ color: pidColor }}>PID</span>
+          </div>
+        </div>
+
+        {/* Grip Force comparison chart */}
+        <div className="mb-3">
+          <span className="text-[8px] uppercase tracking-wider text-white/25 block mb-1">Grip Force</span>
+          <ComparisonChart
+            dataA={state.ai.forceHistory} dataB={state.pid.forceHistory}
+            colorA={aiColor} colorB={pidColor} labelA="AI" labelB="PID"
+          />
+        </div>
+
+        {/* Slip comparison chart */}
+        <div>
+          <span className="text-[8px] uppercase tracking-wider text-white/25 block mb-1">Slip Magnitude</span>
+          <ComparisonChart
+            dataA={state.ai.slipHistory} dataB={state.pid.slipHistory}
+            colorA={aiColor} colorB={pidColor} labelA="AI" labelB="PID"
+            height={45}
           />
         </div>
       </div>
 
-      {/* Pressure comparison (small, top corners) */}
-      <div className="absolute top-12 left-3 glass-light rounded-lg p-2 animate-fade-in" style={{ width: '90px', animationDelay: '0.6s', opacity: 0 }}>
-        <span className="text-[7px] uppercase tracking-wider text-white/25 block mb-1">AI Pressure</span>
-        <PressureGrid electrodes={state.ai.sensorReading.electrodes} slipDetected={state.ai.slipEvent.detected} />
+      {/* ── Left panel: sensor + active metrics ── */}
+      <div className="absolute left-3 bottom-3 glass rounded-xl p-3 pointer-events-auto animate-slide-up"
+        style={{ width: '165px', animationDelay: '0.5s', opacity: 0 }}>
+
+        <span className="text-[9px] font-medium text-white/40 uppercase tracking-wider block mb-2">
+          BioTac Sensor
+        </span>
+
+        <PressureGrid electrodes={active.sensorReading.electrodes} slipDetected={active.slipEvent.detected} />
+
+        <div className="grid grid-cols-3 gap-1 mt-2">
+          <div>
+            <span className="text-[7px] text-white/20 uppercase">Grip</span>
+            <div className="text-[11px] font-mono font-semibold tabular-nums" style={{ color: state.activeMode === 'ai' ? aiColor : pidColor }}>
+              {(active.gripForce * 100).toFixed(0)}%
+            </div>
+          </div>
+          <div>
+            <span className="text-[7px] text-white/20 uppercase">Temp</span>
+            <div className="text-[11px] font-mono text-white/50 tabular-nums">
+              {active.sensorReading.temperature.toFixed(1)}°
+            </div>
+          </div>
+          <div>
+            <span className="text-[7px] text-white/20 uppercase">Imp.</span>
+            <div className="text-[11px] font-mono text-white/50 tabular-nums">
+              {active.sensorReading.impedance.toFixed(0)}
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="absolute top-12 right-3 glass-light rounded-lg p-2 animate-fade-in" style={{ width: '90px', animationDelay: '0.7s', opacity: 0 }}>
-        <span className="text-[7px] uppercase tracking-wider text-white/25 block mb-1">PID Pressure</span>
-        <PressureGrid electrodes={state.pid.sensorReading.electrodes} slipDetected={state.pid.slipEvent.detected} />
+
+      {/* ── Top right: time ── */}
+      <div className="absolute top-3 right-3 glass rounded-lg px-2.5 py-1.5 animate-fade-in"
+        style={{ animationDelay: '0.3s', opacity: 0 }}>
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] text-white/25 uppercase tracking-wider">Time</span>
+          <span className="text-xs font-mono text-white/60 tabular-nums">{state.time.toFixed(1)}s</span>
+          <div className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: '#00ff88', boxShadow: '0 0 6px #00ff88', animation: 'pulse-glow 2s infinite' }} />
+        </div>
       </div>
     </div>
   )
