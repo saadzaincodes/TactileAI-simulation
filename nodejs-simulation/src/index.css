@@ -69,8 +69,31 @@ body {
   box-shadow: 0 0 20px rgba(255, 51, 85, 0.4), 0 0 60px rgba(255, 51, 85, 0.15);
 }
 
-.leva-c-kWgxhW { /* override leva panel styles */
-  --leva-sizes-controlWidth: 160px;
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e0e4f0;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+}
+input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e0e4f0;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  cursor: pointer;
 }
 
 ::-webkit-scrollbar {
