@@ -13,13 +13,15 @@ This repository provides two complementary simulation environments for exploring
 
 <div align="center">
 
-### [**Launch the Interactive 3D Simulation**](https://tactile-ai-simulation.vercel.app)
+<a href="https://tactile-ai-simulation.vercel.app">
+  <img src="docs/tactileai-simulation-preview.png" alt="TactileAI 3D Simulation Preview" width="100%" />
+</a>
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-TactileAI_3D_Simulation-00d4ff?style=for-the-badge&logo=vercel&logoColor=white)](https://tactile-ai-simulation.vercel.app)
 
 </div>
 
-> **Controls:** Orbit with mouse drag · Zoom with scroll · Expand the **Controls** panel to adjust object weight, surface friction, control mode (AI vs PID), and simulation speed.
+> **Controls:** Orbit with mouse drag · Zoom with scroll · Toggle between **AI Controller** and **Traditional PID** · Trigger scenarios like **Sudden Weight**, **Oil Spill**, or **Stress Test** to compare controller performance.
 
 ---
 
@@ -38,7 +40,7 @@ TactileAI-simulation/
 │   │   │   └── Dashboard.tsx    # 2D overlay: charts, metrics, pressure grid
 │   │   ├── simulation/
 │   │   │   └── biotacModel.ts   # Sensor model, slip detection, AI/PID controllers
-│   │   ├── App.tsx              # Application root with Leva controls
+│   │   ├── App.tsx              # Application root with simulation loop
 │   │   └── main.tsx             # Entry point
 │   ├── vercel.json              # Vercel deployment configuration
 │   └── package.json
@@ -66,8 +68,10 @@ A real-time web simulation that visualises how a robotic gripper uses tactile fe
 | **Robotic Arm** | 4-DOF articulated arm with metallic PBR materials and animated gripper fingers |
 | **Tactile Sensor** | 6×8 BioTac electrode grid with per-cell pressure-to-colour mapping |
 | **Slip Detection** | Real-time slip computation based on grip force, object weight, and surface friction |
-| **AI vs PID Control** | Toggle between an adaptive AI controller and a traditional PID controller |
-| **Sensor Dashboard** | Live telemetry overlay with grip force, slip risk, AI confidence, and mini-charts |
+| **AI vs PID Control** | Toggle between an adaptive AI controller and a traditional PID controller — both run simultaneously for live comparison |
+| **Scenario Presets** | Trigger Steady State, Sudden Weight, Oil Spill, Vibration, or Stress Test to compare controller responses |
+| **Object Drop Physics** | Object slides, falls with gravity, and bounces when a controller fails — with red impact flash |
+| **Comparison Dashboard** | Overlaid grip force and slip magnitude charts showing AI (solid) vs PID (dashed) in real time |
 | **Pressure Heatmap** | 2D BioTac grid showing electrode activation with temperature and impedance readings |
 | **Visual Effects** | Bloom, chromatic aberration, vignette, particle effects, and glowing joint rings |
 
@@ -76,7 +80,6 @@ A real-time web simulation that visualises how a robotic gripper uses tactile fe
 - **React Three Fiber** — React renderer for Three.js
 - **@react-three/drei** — Scene helpers (OrbitControls, Grid, Float, Environment, ContactShadows)
 - **@react-three/postprocessing** — Bloom, chromatic aberration, vignette
-- **Leva** — Interactive parameter controls
 - **Tailwind CSS** — Dashboard overlay styling
 - **Vite + TypeScript** — Build toolchain
 
