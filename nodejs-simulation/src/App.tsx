@@ -68,11 +68,12 @@ export default function App() {
         <SimulationLoop onStateUpdate={handleUpdate} stateRef={stateRef} />
       </Canvas>
 
-      <Dashboard state={dashState} onModeToggle={handleModeToggle} />
+      <Dashboard state={dashState} />
 
       <ControlPanel
         state={dashState}
         onScenario={handleScenario}
+        onModeToggle={handleModeToggle}
         onWeightChange={handleWeightChange}
         onFrictionChange={handleFrictionChange}
       />
