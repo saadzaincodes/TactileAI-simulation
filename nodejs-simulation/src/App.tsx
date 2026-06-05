@@ -44,19 +44,15 @@ export default function App() {
   const [dashState, setDashState] = useState<SimulationState>(stateRef.current)
 
   const handleUpdate = useCallback((state: SimulationState) => setDashState(state), [])
-
   const handleScenario = useCallback((type: ScenarioType) => {
     stateRef.current = activateScenario(stateRef.current, type)
   }, [])
-
   const handleModeToggle = useCallback((mode: ControlMode) => {
     stateRef.current = { ...stateRef.current, activeMode: mode }
   }, [])
-
   const handleWeightChange = useCallback((v: number) => {
     stateRef.current = { ...stateRef.current, baseWeight: v }
   }, [])
-
   const handleFrictionChange = useCallback((v: number) => {
     stateRef.current = { ...stateRef.current, baseFriction: v }
   }, [])
@@ -72,21 +68,14 @@ export default function App() {
         <SimulationLoop onStateUpdate={handleUpdate} stateRef={stateRef} />
       </Canvas>
 
-      <Dashboard state={dashState} />
+      <Dashboard state={dashState} onModeToggle={handleModeToggle} />
 
       <ControlPanel
         state={dashState}
         onScenario={handleScenario}
-        onModeToggle={handleModeToggle}
         onWeightChange={handleWeightChange}
         onFrictionChange={handleFrictionChange}
       />
-
-      {/* Title */}
-      <div className="absolute top-3 left-4 animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
-        <h1 className="text-base font-semibold tracking-tight text-white/90">TactileAI</h1>
-        <p className="text-[9px] text-white/30 font-mono mt-0.5">Robotic Slip Detection</p>
-      </div>
     </div>
   )
 }
